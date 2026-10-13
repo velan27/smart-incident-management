@@ -49,15 +49,20 @@ public class OtpServiceImpl implements OtpService {
 
         try {
             emailService.sendOtpEmail(email, otp, purpose);
-        } catch (Exception ex) {
-            // In local/dev environments mail may be unconfigured. Do not fail OTP generation/storage.
-            auditLogService.logSystem(
-                    "OTP_EMAIL_FAILED",
-                    "Failed to send OTP email for purpose: " + purpose,
-                    null,
-                    "EMAIL"
-            );
-        }
+      
+} catch (Exception ex) {
+    org.slf4j.LoggerFactory.getLogger(OtpServiceImpl.class)
+            .error("OTP email failed for purpose {}: {}", purpose, ex.getMessage(), ex);
+
+    auditLogService.logSystem(
+            "OTP_EMAIL_FAILED",
+            "Failed to send OTP email for purpose: " + purpose
+                    + ". Error: " + ex.getClass().getSimpleName(),
+            null,
+            "EMAIL"
+    );
+}
+
 
         auditLogService.logSystem(
                 "OTP_GENERATED",
