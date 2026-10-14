@@ -16,32 +16,28 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-
   backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     image: akshaygouda646/smartims-backend:v1
     container_name: smartims-backend
     restart: unless-stopped
     environment:
+      DB_PASSWORD: ${DB_PASSWORD}
       DB_URL: jdbc:postgresql://postgres:5432/smart_ims
-      DB_USERNAME: akshay_gouda
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-
+      DB_USERNAME: ${DB_USERNAME}
       JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRATION: ${JWT_EXPIRATION}
-
+      JWT_EXPIRATION: "86400000"
+      FRONTEND_LOGIN_URL: http://localhost:5173/login
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
-
-      FRONTEND_LOGIN_URL: http://localhost:5173/login
       MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
-
     ports:
       - "8081:8081"
-
     depends_on:
       postgres:
         condition: service_healthy
-
     networks:
       - smartims-network
 

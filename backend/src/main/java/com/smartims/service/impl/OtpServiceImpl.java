@@ -9,6 +9,8 @@ import com.smartims.service.OtpException;
 import com.smartims.service.OtpService;
 import com.smartims.repository.OtpVerificationRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,9 @@ import java.util.Random;
 @RequiredArgsConstructor
 public class OtpServiceImpl implements OtpService {
 
+    private static final Logger log =
+            LoggerFactory.getLogger(OtpServiceImpl.class);
+
     private final OtpVerificationRepository otpRepo;
     private final EmailService emailService;
     private final AuditLogService auditLogService;
@@ -30,12 +35,16 @@ public class OtpServiceImpl implements OtpService {
 
         otpRepo.findTopByEmailAndPurposeOrderByCreatedAtDesc(email, purpose)
                 .ifPresent(lastOtp -> {
-                    if (Duration.between(lastOtp.getCreatedAt(), LocalDateTime.now()).toSeconds() < 30) {
-                        throw new BadRequestException("Please wait before requesting another OTP");
+                    if (Duration.between(
+                            lastOtp.getCreatedAt(),
+                            LocalDateTime.now()).toSeconds() < 30) {
+                        throw new BadRequestException(
+                                "Please wait before requesting another OTP");
                     }
                 });
 
-        String otp = String.valueOf(100000 + new Random().nextInt(900000));
+        String otp = String.valueOf(
+                100000 + new Random().nextInt(900000));
 
         OtpVerification entity = new OtpVerification();
         entity.setEmail(email);
@@ -49,27 +58,27 @@ public class OtpServiceImpl implements OtpService {
 
         try {
             emailService.sendOtpEmail(email, otp, purpose);
-      
-} catch (Exception ex) {
-    org.slf4j.LoggerFactory.getLogger(OtpServiceImpl.class)
-            .error("OTP email failed for purpose {}: {}", purpose, ex.getMessage(), ex);
 
-    auditLogService.logSystem(
-            "OTP_EMAIL_FAILED",
-            "Failed to send OTP email for purpose: " + purpose
-                    + ". Error: " + ex.getClass().getSimpleName(),
-            null,
-            "EMAIL"
-    );
-}
+            auditLogService.logSystem(
+                    "OTP_GENERATED",
+                    "OTP generated and sent for purpose: " + purpose,
+                    null,
+                    "OTP"
+            );
 
+        } catch (Exception ex) {
+            log.error("OTP email failed for purpose {}: {}",
+                    purpose, ex.getMessage(), ex);
 
-        auditLogService.logSystem(
-                "OTP_GENERATED",
-                "OTP generated and sent for purpose: " + purpose,
-                null,
-                "OTP"
-        );
+            auditLogService.logSystem(
+                    "OTP_EMAIL_FAILED",
+                    "Failed to send OTP email for purpose: "
+                            + purpose + ". Error: "
+                            + ex.getClass().getSimpleName(),
+                    null,
+                    "EMAIL"
+            );
+        }
     }
 
     @Override
@@ -105,7 +114,8 @@ public class OtpServiceImpl implements OtpService {
     @Override
     public boolean isOtpVerified(String email, OtpPurpose purpose) {
         return otpRepo
-                .findTopByEmailAndPurposeAndVerifiedTrueOrderByCreatedAtDesc(email, purpose)
+                .findTopByEmailAndPurposeAndVerifiedTrueOrderByCreatedAtDesc(
+                        email, purpose)
                 .isPresent();
     }
 }
